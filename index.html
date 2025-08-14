@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel BI - Ranking Orçamentário</title>
+    <title>Ranking Orçamentário Paraná - Portal Unificado</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@tailwindcss/typography@0.5.x/dist/typography.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts: Poppins e Lato -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
@@ -20,51 +23,70 @@
         .bg-gov-green { background-color: #009933; }
         .text-gov-green { color: #009933; }
         
-        .text-gov-gold { color: #DAA520; }
-        .bg-gov-gold { background-color: #DAA520; }
-
-        /* Cores primárias personalizadas baseadas na imagem e uso existente */
-        .text-primary-dark { color: #003366; } /* Cor azul escura do governo */
-        .bg-primary-dark { background-color: #003366; } /* Cor azul escura do governo */
-        .text-primary-medium { color: #004B91; } /* Um tom de azul do indicador, próximo ao 'satisfactory' */
-        .text-primary-light { color: #0066CC; } /* Um tom de azul do indicador, próximo ao 'excellent' */
-
+        /* Cor dourada ajustada para melhor visibilidade */
+        .text-gov-gold { color: #DAA520; } /* Alterado de #FFCC00 para #DAA520 */
+        .bg-gov-gold { background-color: #DAA520; } /* Alterado de #FFCC00 para #DAA520 */
 
         /* Estilos base e fontes */
         body {
             font-family: 'Lato', sans-serif;
-            background-color: #f4f7f6;
-            color: #374151;
+            background-color: #f4f7f6; /* Um cinza muito claro para o fundo */
+            color: #374151; /* Default text-gray-800 */
         }
         h1, h2, h3, h4, h5, h6, .font-poppins {
             font-family: 'Poppins', sans-serif;
         }
+        
+        /* Estilo das abas do Painel de Resultados */
+        .dashboard-tab-button {
+            transition: all 0.3s ease-in-out;
+            position: relative;
+            border-bottom: 4px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .dashboard-tab-button.active {
+            border-bottom-color: #003366; /* Azul do Paraná */
+            color: #003366;
+            font-weight: 700;
+        }
+        .dashboard-tab-button:not(.active):hover {
+            color: #003366;
+            border-bottom-color: #d1d5db;
+        }
+
+        /* Estilo das abas do Infográfico da Resolução */
+        .res-tab-button {
+            padding: 1rem 1.5rem;
+            font-weight: 600;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #4b515b; /* text-gray-600 */
+        }
+        .res-tab-button.active {
+            border-color: #009933; /* border-gov-green */
+            color: #009933; /* text-gov-green */
+        }
 
         /* Estilos de gráficos */
-        .chart-container {
+        .dashboard-chart-container {
             position: relative;
             width: 100%;
-            height: 300px; /* Altura consistente para cada caixa de gráfico */
+            max-width: 250px;
+            height: 250px;
+            margin: auto;
+        }
+        .radar-chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
             max-height: 400px;
-            display: flex; /* Adicionado para alinhamento interno */
-            flex-direction: column; /* Adicionado para alinhamento interno */
-            justify-content: flex-start; /* Alinha o conteúdo ao topo */
-            align-items: center; /* Centraliza horizontalmente */
-            padding-top: 1rem; /* Espaçamento para o título */
         }
-        /* Correção para o dimensionamento do canvas dentro do container flex */
-        .chart-container canvas {
-            width: 100% !important; /* Mantém a largura 100% */
-            /* Remove height: 100% !important; e confia no flex-grow */
-            flex-grow: 1; /* Permite que o canvas ocupe o espaço vertical disponível */
-            min-height: 0; /* Importante para que o flex-grow funcione em alguns casos */
-        }
-        @media (min-width: 768px) {
-            .chart-container {
-                height: 350px;
-            }
-        }
-
         .animate-fade-in {
             animation: fadeIn 0.5s ease-in-out;
         }
@@ -73,500 +95,923 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Estilos para destaque da unidade selecionada */
-        .kpi-selected-highlight {
-            border-color: #009933; /* gov-green */
-            background-color: #e6ffe6; /* Light green for background */
-            box-shadow: 0 4px 10px rgba(0, 153, 51, 0.2);
-            transition: all 0.3s ease-in-out;
+        /* Estilos específicos do infográfico da Resolução */
+        .res-section-icon {
+            font-size: 3rem;
+            color: #009933; /* text-gov-green */
+            margin-bottom: 1rem;
         }
-
-        /* Novas classes de cores para os status dos indicadores (tons de azul + vermelho) */
-        .dot-excellent { background-color: #0066CC; } /* Azul mais claro (primary-light) */
-        .text-excellent { color: #0066CC; }
-        .dot-satisfactory { background-color: #004B91; } /* Azul médio (primary-medium) */
-        .text-satisfactory { color: #004B91; }
-        .dot-moderate { background-color: #002B5B; } /* Azul escuro (primary-dark) */
-        .text-moderate { color: #002B5B; }
-        .dot-insatisfactory { background-color: #DC3545; } /* Vermelho vibrante */
-        .text-insatisfactory { color: #DC3545; }
+        .full-resolution-text h1, .full-resolution-text h2, .full-resolution-text h3 {
+            font-weight: bold;
+            margin-top: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .full-resolution-text h1 { font-size: 2.25rem; }
+        .full-resolution-text h2 { font-size: 1.75rem; }
+        .full-resolution-text h3 { font-size: 1.25rem; }
+        .full-resolution-text p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        .full-resolution-text ul {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body class="bg-gray-100 p-4 sm:p-8">
 
-    <!-- Alterado max-w-7xl para max-w-6xl para um tamanho mais adequado -->
-    <div class="max-w-6xl mx-auto bg-white shadow-2xl rounded-xl overflow-hidden">
-        <!-- Cabeçalho do Painel BI - Ajustado para o modelo da imagem -->
-        <header class="bg-gov-blue text-white p-6 md:p-8 text-center">
-            <h1 class="text-3xl sm:text-4xl font-bold">Painel BI: Acompanhamento Orçamentário</h1>
-            <p class="text-lg text-white mt-1">Visão Detalhada de Pontuações e Ranking por Unidade</p>
-        </header>
+    <!-- Container Principal de Páginas -->
+    <div id="app-container" class="mx-auto bg-white shadow-2xl rounded-xl overflow-hidden">
+        
+        <!-- Página Inicial (Intro) -->
+        <div id="intro-page" class="page-content bg-gray-100 p-8 md:p-12 text-center">
+            <header class="bg-gov-blue text-white rounded-lg shadow-lg p-8 md:p-12 mb-12 text-center">
+                <h1 class="text-3xl md:text-5xl font-bold">Ranking Orçamentário de Competitividade</h1>
+                <p class="mt-2 text-lg text-gray-300">Análise dos Pilares de Gestão Fiscal do Estado do Paraná</p>
+            </header>
 
-        <!-- Aumentado o padding vertical da seção principal para mais "respiro" -->
-        <main class="py-8 px-6 md:px-8">
-            <!-- Seção de KPIs -->
-            <section class="mb-12">
-                <!-- Aumentado o margin-bottom do título da seção -->
-                <h2 class="text-2xl font-bold text-primary-dark mb-8 text-center">Indicadores Chave de Desempenho</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div id="kpi-avg-score" class="bg-white p-6 rounded-lg shadow-md border border-gray-200 text-center">
-                        <!-- Reduzido de text-5xl para text-4xl para um tamanho mais equilibrado -->
-                        <p class="text-4xl font-bold text-gov-green">85.5</p>
-                        <p class="text-gray-700 font-semibold mt-2">Nota Média Geral</p>
-                    </div>
-                    <div id="kpi-best-unit" class="bg-white p-6 rounded-lg shadow-md border border-gray-200 text-center">
-                        <!-- Reduzido de text-5xl para text-4xl para um tamanho mais equilibrado -->
-                        <p class="text-4xl font-bold text-primary-medium" id="best-unit-name">Carregando...</p>
-                        <p class="text-gray-700 font-semibold mt-2" id="best-unit-label">Melhor Desempenho no Grupo</p>
-                    </div>
-                    <div id="kpi-selected-unit" class="bg-white p-6 rounded-lg shadow-md border border-gray-200 text-center">
-                        <!-- Reduzido de text-5xl para text-4xl para um tamanho mais equilibrado -->
-                        <p class="text-4xl font-bold text-gov-gold" id="selected-unit-name">N/A</p>
-                        <p class="text-gray-700 font-semibold mt-2" id="selected-unit-label">Unidade Selecionada</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Nova Seção: Composição da Pontuação por Eixo -->
-            <section id="axis-composition-section" class="mb-12 bg-white p-6 rounded-lg shadow-lg border border-gray-200">
-                <!-- Aumentado o margin-bottom do título da seção -->
-                <h2 class="text-2xl font-bold text-primary-dark mb-8 text-center">Composição da Pontuação por Eixo da Unidade Selecionada</h2>
-                <div id="bi-axis-composition-content">
-                    <div id="bi-axis-placeholder" class="flex flex-col items-center justify-center h-64 text-center text-gray-500">
-                        <svg class="w-16 h-16 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0 0 20.25 18V5.25A2.25 2.25 0 0 0 18 3H6A2.25 2.25 0 0 0 3.75 5.25v12.75A2.25 2.25 0 0 0 6 20.25Z" /></svg>
-                        <h4 class="text-lg font-bold text-gray-700">Composição por Eixo</h4>
-                        <p>Selecione uma unidade na tabela abaixo para ver sua pontuação detalhada por eixo.</p>
-                    </div>
-                    <div id="bi-axis-charts-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 hidden">
-                        <!-- Gráficos para cada eixo serão renderizados aqui -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Seção de Detalhes dos Indicadores (Lista) -->
-            <section id="indicator-details-section" class="mb-12 bg-white p-6 rounded-lg shadow-lg border border-gray-200">
-                <!-- Aumentado o margin-bottom do título da seção -->
-                <h2 class="text-2xl font-bold text-primary-dark mb-8 text-center">Pontuação Detalhada dos Indicadores da Unidade Selecionada</h2>
-                <div id="bi-indicator-details-content">
-                    <div id="bi-indicator-placeholder" class="flex flex-col items-center justify-center h-40 text-center text-gray-500">
-                        <svg class="w-16 h-16 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0 0 20.25 18V5.25A2.25 2.25 0 0 0 18 3H6A2.25 2.25 0 0 0 3.75 5.25v12.75A2.25 2.25 0 0 0 6 20.25Z" /></svg>
-                        <h4 class="text-lg font-bold text-gray-700">Detalhes dos Indicadores</h4>
-                        <p>Selecione uma unidade na tabela abaixo para ver a pontuação de cada indicador.</p>
-                    </div>
-                    <ul id="bi-indicator-scores-list" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm hidden">
-                        <!-- Pontuações dos indicadores serão renderizadas aqui -->
-                    </ul>
-                </div>
-            </section>
-
-            <!-- Seção de Tabela Detalhada -->
-            <section class="mb-12 bg-white p-6 rounded-lg shadow-lg border border-gray-200">
-                <!-- Aumentado o margin-bottom do título da seção -->
-                <h2 class="text-2xl font-bold text-primary-dark mb-8 text-center">Classificação Detalhada por Unidade</h2>
-                <div class="flex flex-col lg:flex-row gap-8">
-                    <div class="w-full">
-                        <h3 class="text-xl font-bold mb-4 text-primary-dark">Tabela de Unidades</h3>
-                        <div class="flex flex-wrap gap-2 mb-4" id="filter-buttons">
-                            <button data-group="todos" class="filter-btn bg-primary-dark text-white py-2 px-4 rounded-md text-sm font-semibold">Todos</button>
-                            <button data-group="Grupo 1" class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-md text-sm font-semibold">Grupo 1</button>
-                            <button data-group="Grupo 2" class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-md text-sm font-semibold">Grupo 2</button>
-                            <button data-group="Indiretas" class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-md text-sm font-semibold">Indiretas</button>
+            <main>
+                <!-- Seção dos 4 Pilares -->
+                <section id="pilares" class="mb-16">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gov-blue mb-8 text-center">Os 4 Pilares da Competitividade</h2>
+                    
+                    <!-- Grid de Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                        
+                        <!-- Card 1: Execução Orçamentária -->
+                        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col items-center text-center">
+                            <div class="bg-gov-green/10 p-4 rounded-full mb-4">
+                                <!-- Ícone: Gráfico de Barras -->
+                                <svg class="w-10 h-10 text-gov-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gov-blue mb-2">Execução Orçamentária</h3>
+                            <p class="text-gray-600">Análise da aplicação eficiente dos recursos públicos conforme o planeado.</p>
                         </div>
-                        <div class="overflow-y-auto h-96 pr-2">
-                            <table class="w-full text-left text-sm">
-                                <thead class="sticky top-0 bg-gray-100 z-10"><tr><th class="p-3 font-semibold">#</th><th class="p-3 font-semibold">Unidade</th><th class="p-3 text-right font-semibold">Nota</th></tr></thead>
-                                <tbody id="bi-ranking-table-body"></tbody>
-                            </table>
+
+                        <!-- Card 2: Créditos Adicionais -->
+                        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col items-center text-center">
+                            <div class="bg-gov-green/10 p-4 rounded-full mb-4">
+                                <!-- Ícone: Sinal de Mais -->
+                                <svg class="w-10 h-10 text-gov-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gov-blue mb-2">Créditos Adicionais</h3>
+                            <p class="text-gray-600">Transparência e justificação na alocação de recursos extra-orçamentais.</p>
+                        </div>
+
+                        <!-- Card 3: Passivos -->
+                        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col items-center text-center">
+                            <div class="bg-gov-green/10 p-4 rounded-full mb-4">
+                                <!-- Ícone: Histórico -->
+                                <svg class="w-10 h-10 text-gov-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gov-blue mb-2">Passivos</h3>
+                            <p class="text-gray-600">Gestão responsável das obrigações financeiras e dívidas do estado.</p>
+                        </div>
+                        
+                        <!-- Card 4: Sustentabilidade Fiscal -->
+                        <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 flex flex-col items-center text-center">
+                            <div class="bg-gov-green/10 p-4 rounded-full mb-4">
+                                <!-- Ícone: Balança -->
+                                <svg class="w-10 h-10 text-gov-green" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c-1.472 0-2.882.265-4.185.75M12 15.75c-1.472 0-2.882.265-4.185.75M5.25 4.97A48.416 48.416 0 0 1 12 4.5c2.291 0 4.545.16 6.75.47m-13.5 0c1.472 0 2.882.265 4.185.75M12 15.75c1.472 0 2.882.265 4.185.75" />
+                                </svg>
+                            </div>
+                            <h3 class="text-xl font-bold text-gov-blue mb-2">Sustentabilidade Fiscal</h3>
+                            <p class="text-gray-600">Equilíbrio de longo prazo entre receitas e despesas para garantir a saúde financeira.</p>
                         </div>
                     </div>
-                </div>
-            </section>
-        </main>
+                </section>
 
-        <footer class="bg-primary-dark text-white p-6 md:p-8 text-center">
-            <p>&copy; 2025 Governo do Estado do Paraná. Todos os direitos reservados.</p>
-        </footer>
+                <!-- Seção de Reconhecimento e Ação -->
+                <section id="reconhecimento" class="mt-16 bg-white rounded-lg shadow-lg p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+                    <div class="flex items-center gap-6">
+                        <!-- Ícone: Troféu -->
+                        <svg class="w-16 h-16 text-gov-gold hidden md:block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9a9 9 0 1 0 9 0Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12.75 5.25a.75.75 0 0 0-1.5 0v2.25H9a.75.75 0 0 0 0 1.5h2.25V12a.75.75 0 0 0 1.5 0V9h2.25a.75.75 0 0 0 0-1.5H12.75V5.25Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 18.75a3 3 0 0 0-3-3H12a3 3 0 0 0-3 3" />
+                        </svg>
+                        <div>
+                            <h2 class="text-2xl font-bold text-gov-blue">Reconhecimento Nacional</h2>
+                            <p class="text-gray-700 mt-1">O Paraná destaca-se pela sua gestão fiscal sólida e transparente, servindo de modelo para o país.</p>
+                        </div>
+                    </div>
+                    <!-- Botão de Ação -->
+                    <button onclick="showMainPage('dashboard-page')" class="bg-gov-blue text-white font-bold py-3 px-8 rounded-lg shadow-md hover:bg-gov-blue-dark transition-colors duration-300 whitespace-nowrap mt-4 md:mt-0">
+                        Acesse o Painel
+                    </button>
+                </section>
+            </main>
+
+            <!-- Rodapé -->
+            <footer class="text-center mt-16 text-gray-500">
+                <p>&copy; 2024 Governo do Estado do Paraná. Todos os direitos reservados.</p>
+            </footer>
+        </div>
+
+        <!-- Painel de Resultados (Dashboard) -->
+        <div id="dashboard-page" class="page-content hidden">
+            <!-- Cabeçalho Padronizado -->
+            <header class="bg-gov-blue text-white p-6 md:p-8 flex flex-col md:flex-row justify-between items-center">
+                <div>
+                    <h1 class="text-3xl sm:text-4xl font-bold">Painel de Resultados</h1>
+                    <p class="text-lg text-gray-300 mt-1">Ranking Orçamentário de Competitividade do Paraná</p>
+                </div>
+                <button onclick="showMainPage('intro-page')" class="mt-4 md:mt-0 inline-flex items-center bg-white/10 text-white font-bold py-2 px-5 rounded-lg hover:bg-white/20 transition-colors duration-300">
+                    <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                    </svg>
+                    Voltar ao Início
+                </button>
+            </header>
+
+            <!-- Navegação por Abas do Dashboard -->
+            <div id="dashboard-tabs-container" class="flex flex-wrap sm:flex-nowrap justify-center sm:justify-start border-b border-gray-200 px-4 sm:px-8 bg-white">
+                <button class="dashboard-tab-button py-4 px-4 md:px-6 text-sm md:text-base font-semibold text-gray-600" data-tab-id="overview">Visão Geral</button>
+                <button class="dashboard-tab-button py-4 px-4 md:px-6 text-sm md:text-base font-semibold text-gray-600" data-tab-id="metodologia">Metodologia</button>
+                <button class="dashboard-tab-button py-4 px-4 md:px-6 text-sm md:text-base font-semibold text-gray-600" data-tab-id="ranking">Ranking</button>
+            </div>
+
+            <div id="dashboard-content-container" class="p-6 md:p-8 bg-gray-50 rounded-b-xl min-h-[60vh]">
+                <!-- O conteúdo das abas do dashboard será renderizado aqui pelo JavaScript -->
+            </div>
+        </div>
+
+        <!-- Infográfico da Resolução -->
+        <div id="resolucao-page" class="page-content hidden">
+            <header class="bg-gov-blue text-white rounded-b-lg shadow-md">
+                <div class="container mx-auto px-6 py-12 text-center">
+                    <h1 class="text-4xl md:text-6xl font-bold leading-tight">
+                        Resolução do Ranking de Execução Orçamentária
+                    </h1>
+                    <p class="mt-2 text-xl md:text-2xl font-semibold text-gray-300">Estado do Paraná - Resolução Nº XX/2025 - SEFA</p>
+                    <p class="mt-2 text-lg text-gray-300 max-w-3xl mx-auto">
+                        Cria o Ranking de Competitividade de Gestão na Execução Orçamentária e estabelece o índice de Gestão na Execução Orçamentária, com vistas a aprimorar a qualidade da gestão orçamentária.
+                    </p>
+                    <button onclick="showMainPage('dashboard-page')" class="mt-8 inline-flex items-center bg-white/10 text-white font-bold py-2 px-5 rounded-lg hover:bg-white/20 transition-colors duration-300">
+                        <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12" />
+                        </svg>
+                        Voltar ao Painel
+                    </button>
+                </div>
+            </header>
+
+            <main class="container mx-auto px-6 py-16">
+                <div class="flex justify-center border-b border-gray-200 mb-8">
+                    <button id="res-tabInfografico" class="res-tab-button active">Resumo</button>
+                    <button id="res-tabResolucao" class="res-tab-button">Resolução Completa</button>
+                </div>
+
+                <div id="res-contentInfografico" class="res-tab-content active">
+                    <section id="objetivos" class="mb-16">
+                        <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Objetivos da Resolução (Art. 2º)</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center">
+                                <p class="res-section-icon">📈</p>
+                                <h3 class="font-bold text-gov-blue text-lg mb-2">Ampliar Efetividade</h3>
+                                <p class="text-sm text-gray-600">Ampliar a efetividade da execução da Lei Orçamentária Anual.</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center">
+                                <p class="res-section-icon">✅</p>
+                                <h3 class="font-bold text-gov-green text-lg mb-2">Promover Gestão Correta</h3>
+                                <p class="text-sm text-gray-600">Promover a correta gestão dos recursos públicos, alinhada às prioridades governamentais.</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center">
+                                <p class="res-section-icon">🤝</p>
+                                <h3 class="font-bold text-gov-gold text-lg mb-2">Incentivar Cumprimento</h3>
+                                <p class="text-sm text-gray-600">Incentivar o cumprimento dos compromissos assumidos no Plano Plurianual e metas fiscais.</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center">
+                                <p class="res-section-icon">💡</p>
+                                <h3 class="font-bold text-gov-blue text-lg mb-2">Estimular Boas Práticas</h3>
+                                <p class="text-sm text-gray-600">Estimular práticas de gestão orçamentária responsável, eficiente e transparente.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <hr class="my-16 border-gray-200">
+
+                    <section id="agrupamentos" class="mb-16">
+                        <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Agrupamento das Unidades Orçamentárias (Art. 5º)</h2>
+                        <p class="mt-4 text-center max-w-4xl mx-auto text-gray-600 mb-8">
+                            Para análises proporcionais e comparações justas, as unidades são avaliadas conforme seu porte orçamentário e vinculação administrativa.
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200 text-center">
+                                <p class="res-section-icon text-4xl">🏢</p>
+                                <h3 class="font-bold text-gov-blue text-lg">Grupo I – Grande Porte</h3>
+                                <p class="text-sm text-gray-600">Orçamento anual superior a R$ [valor de referência].</p>
+                            </div>
+                            <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200 text-center">
+                                <p class="res-section-icon text-4xl">💼</p>
+                                <h3 class="font-bold text-gov-green text-lg">Grupo II – Médio Porte</h3>
+                                <p class="text-sm text-gray-600">Orçamento anual entre R$ [mínimo] e R$ [máximo].</p>
+                            </div>
+                            <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200 text-center">
+                                <p class="res-section-icon text-4xl">🌱</p>
+                                <h3 class="font-bold text-gov-gold text-lg">Grupo III – Pequeno Porte</h3>
+                                <p class="text-sm text-gray-600">Orçamento anual inferior a R$ [valor de referência].</p>
+                            </div>
+                            <div class="bg-white p-5 rounded-lg shadow-md border border-gray-200 text-center">
+                                <p class="res-section-icon text-4xl">🔗</p>
+                                <h3 class="font-bold text-gov-blue text-lg">Grupo IV - Adm. Indireta Dependente</h3>
+                                <p class="text-sm text-gray-600">Entidades dependentes de recursos do Tesouro Estadual.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <hr class="my-16 border-gray-200">
+
+                    <section id="eixos-indicadores" class="mb-16">
+                        <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Eixos de Análise e Indicadores (Art. 6º)</h2>
+                        <p class="mt-4 text-center max-w-4xl mx-auto text-gray-600 mb-8">
+                            Os indicadores são organizados em quatro eixos principais, cada um avaliando diferentes dimensões da gestão orçamentária.
+                        </p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                                <h3 class="font-bold text-gov-blue text-xl mb-4">Eixo I: Execução Orçamentária</h3>
+                                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                                    <li>Empenho sobre Dotação Atualizada</li>
+                                    <li>Liquidação sobre Dotação Atualizada</li>
+                                    <li>Liquidação sobre Empenhos</li>
+                                </ul>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                                <h3 class="font-bold text-gov-green text-xl mb-4">Eixo II: Créditos Adicionais</h3>
+                                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                                    <li>Expansão Orçamentária</li>
+                                    <li>Execução do Superávit Concedido</li>
+                                    <li>Evitabilidade na Liberação de Créditos com Superávit</li>
+                                </ul>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                                <h3 class="font-bold text-gov-gold text-xl mb-4">Eixo III: Passivos de Exercícios Anteriores</h3>
+                                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                                    <li>Inscrição em Restos a Pagar</li>
+                                    <li>Cancelamento de Restos a Pagar</li>
+                                    <li>Pagamento dos Restos a Pagar</li>
+                                    <li>Impacto de Despesas de Exercícios Anteriores</li>
+                                </ul>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                                <h3 class="font-bold text-gov-blue text-xl mb-4">Eixo IV: Sustentabilidade Fiscal e Estratégica</h3>
+                                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                                    <li>Pressão sobre Tesouro (Fontes Substituídas)</li>
+                                    <li>Conformidade com o LME Finalístico</li>
+                                    <li>Remanejamento Interno Sem Acréscimo orçamentário</li>
+                                    <li>Execução Estratégica de Recursos Próprios e Vinculados</li>
+                                    <li>Independência Financeira</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <p class="mt-8 text-center text-sm text-gray-500">
+                            Fórmulas de cálculo, critérios de apuração, metas e parâmetros de excelência serão definidos em normas complementares da Diretoria de Orçamento Estadual (Art. 6º, §2º).
+                        </p>
+                    </section>
+
+                    <hr class="my-16 border-gray-200">
+
+                    <section id="metodologia-calculo" class="mb-16">
+                        <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Metodologia de Cálculo da Pontuação (Seção III)</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-start">
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center">
+                                <p class="res-section-icon">🔢</p>
+                                <h3 class="font-bold text-gov-blue text-lg mb-2">Pontuação por Indicador (Art. 8º)</h3>
+                                <p class="text-sm text-gray-600">Cada indicador terá pontuação variável de **0 a 5 pontos**, atribuída conforme o desempenho proporcional da Unidade Orçamentária.</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center">
+                                <p class="res-section-icon">➕</p>
+                                <h3 class="font-bold text-gov-green text-lg mb-2">Pontuação por Eixo (Art. 9º)</h3>
+                                <p class="text-sm text-gray-600">Cada eixo temático terá pontuação máxima de **25 pontos**, calculada pela soma das notas dos respectivos indicadores.</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center">
+                                <p class="res-section-icon">🗓️</p>
+                                <h3 class="font-bold text-gov-gold text-lg mb-2">Nota Bimestral (Art. 10º)</h3>
+                                <p class="text-sm text-gray-600">A nota bimestral será expressa na escala de **0 a 100 pontos**, definida pela soma dos resultados dos Eixos Temáticos.</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center">
+                                <p class="res-section-icon">⚖️</p>
+                                <h3 class="font-bold text-gov-blue text-lg mb-2">Pontuação Final Ponderada (Art. 11º)</h3>
+                                <p class="text-sm text-gray-600">A pontuação final (0 a 100 pontos) será a média ponderada dos eixos ao longo dos seis bimestres, com fatores de ponderação: 1º e 6º bimestres (**1.0**); 2º e 3º bimestres (**1.5**); 4º e 5º bimestres (**2.5**).</p>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center">
+                                <p class="res-section-icon">🔄</p>
+                                <h3 class="font-bold text-gov-green text-lg mb-2">Fase de Recurso (Art. 12º)</h3>
+                                <p class="text-sm text-gray-600">A nota final poderá ser objeto de recurso, com justificativa fundamentada, protocolado em até **5 dias úteis** da divulgação do resultado preliminar.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <hr class="my-16 border-gray-200">
+
+                    <section id="divulgacao-premiacao" class="mb-16">
+                        <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Divulgação e Reconhecimento (Seção IV)</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gov-green">
+                                <h3 class="font-bold text-gov-blue text-xl mb-4 text-center">Níveis de Desempenho (Art. 13º)</h3>
+                                <p class="text-sm text-center text-gray-600 mb-4">A nota dos órgãos será classificada para fins de acompanhamento:</p>
+                                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                                    <li>**Superior:** Desempenho de altíssima qualidade, superando expectativas.</li>
+                                    <li>**Suficiente:** Indica um desempenho sólido, atendendo às expectativas com consistência e qualidade acima da média.</li>
+                                    <li>**Satisfatório com Riscos:** Atendimento essencial, mas com fragilidades ou inconsistências que demandam acompanhamento e ajustes.</li>
+                                    <li>**Crítico:** Desempenho significativamente abaixo do esperado, exigindo atenção imediata para correções ou ações de melhoria.</li>
+                                </ul>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gov-green">
+                                <h3 class="font-bold text-gov-green text-xl mb-4 text-center">Premiação e Desclassificação (Art. 14º, 17º)</h3>
+                                <ul class="list-disc list-inside text-gray-700 space-y-2">
+                                    <li>**Campeão/Vencedor/Topzera:** Órgão com a maior nota final em cada agrupamento.</li>
+                                    <li>**Desclassificação:** Órgãos com Unidades Orçamentárias entre as duas piores colocações do grupo serão automaticamente desclassificados.</li>
+                                    <li>**Reconhecimento:** Certificados de desempenho, divulgação pública dos resultados e preferência em alocação de cotas orçamentárias adicionais.</li>
+                                    <li>**Capacitação Obrigatória:** Para núcleos fazendários setoriais com desempenho classificado como ruim (Art. 18º).</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </section>
+
+                    <hr class="my-16 border-gray-200">
+
+                    <section id="competencias" class="mb-16">
+                        <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Competências (Capítulo III)</h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center">
+                                <p class="res-section-icon">👥</p>
+                                <h3 class="font-bold text-gov-blue text-lg mb-2">Núcleo Fazendário Setorial – NFS (Art. 19)</h3>
+                                <ul class="text-sm text-gray-600 list-disc list-inside text-left">
+                                    <li>Acompanhar a execução orçamentária.</li>
+                                    <li>Assessorar o Ordenador de Despesas.</li>
+                                    <li>Propor medidas corretivas.</li>
+                                </ul>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center">
+                                <p class="res-section-icon">👨‍💼</p>
+                                <h3 class="font-bold text-gov-green text-lg mb-2">Ordenador de Despesas (Art. 20)</h3>
+                                <ul class="text-sm text-gray-600 list-disc list-inside text-left">
+                                    <li>Assegurar a correta execução do orçamento, em conformidade com as normas vigentes;</li>
+                                    <li>Atuar para o cumprimento dos indicadores.</li>
+                                    <li>Responsabilizar-se pela gestão fiscal eficiente.</li>
+                                </ul>
+                            </div>
+                            <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200 text-center">
+                                <p class="res-section-icon">🏛️</p>
+                                <h3 class="font-bold text-gov-gold text-lg mb-2">Diretoria de Orçamento Estadual – DOE (Art. 21)</h3>
+                                <ul class="text-sm text-gray-600 list-disc list-inside text-left">
+                                    <li>Definir parâmetros de mensuração.</li>
+                                    <li>Monitorar, consolidar e divulgar resultados.</li>
+                                    <li>Propor ações corretivas e orientações.</li>
+                                    <li>Promover publicação anual de relatórios.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div id="res-contentResolucao" class="res-tab-content bg-white p-8 rounded-lg shadow-lg border border-gray-200">
+                    <div class="full-resolution-text text-gray-800">
+                        <h1 class="text-3xl">RESOLUÇÃO Nº XX/2025 - SE FA, DE XX DE XXX DE 2025</h1>
+                        <p class="mb-4">Cria o Ranking de Competitividade de Gestão na Execução Orçamentária e estabelece o índice de Gestão na Execução Orçamentária, composto por indicadores para acompanhamento, monitoramento e avaliação da execução orçamentária das Unidades Orçamentárias do Poder Executivo do Estado do Paraná, com vistas a aprimorar a qualidade da gestão orçamentária.</p>
+                        <p class="mb-4">O SECRETÁRIO DE ESTADO DA FAZENDA, no uso das atribuições que lhes conferem o Decreto nº ________/2025 e demais normas aplicáveis,</p>
+                        <h2 class="text-2xl">RESOLVE:</h2>
+                        <h2 class="text-2xl">CAPÍTULO I</h2>
+                        <h3 class="text-xl">DAS DISPOSIÇÕES GERAIS</h3>
+                        <p class="mb-4">Art. 1º Esta Resolução cria o Ranking de Competitividade de Gestão na Execução Orçamentária e estabelece o índice de Gestão na Execução Orçamentária, composto por indicadores para acompanhamento, monitoramento e avaliação da execução orçamentária das Unidades Orçamentárias do Poder Executivo do Estado do Paraná.</p>
+                        <p class="mb-4">Parágrafo único: Aplicam-se as disposições desta Resolução a todas as Unidades Orçamentárias integrantes do orçamento fiscal.</p>
+                        <p class="mb-4">Art. 2º São objetivos desta Resolução:</p>
+                        <ul class="list-disc list-inside mb-4">
+                            <li>I – Ampliar a efetividade da execução da Lei Orçamentária Anual;</li>
+                            <li>II – Promover a correta gestão dos recursos públicos, alinhada às prioridades governamentais;</li>
+                            <li>III – Incentivar o cumprimento dos compromissos assumidos no Plano Plurianual e nas metas fiscais estabelecidas na Lei de Diretrizes Orçamentárias;</li>
+                            <li>IV – Estimular práticas de gestão orçamentária responsável, eficiente e transparente.</li>
+                        </ul>
+                        <p class="mb-4">Art. 3º Os resultados obtidos a partir dos indicadores elencados nesta Resolução serão utilizados para avaliar a eficiência das Unidades Orçamentárias na execução do orçamento, constituindo-se em instrumento de aferição da qualidade da gestão orçamentária.</p>
+                        <p class="mb-4">Parágrafo único. Os indicadores instituídos por esta Resolução serão compostos por métricas quantitativas e qualitativas, visando aferir o desempenho da execução orçamentária das Unidades Orçamentárias.</p>
+                        <p class="mb-4">Art. 4° Os resultados parciais e as posições obtidas no resultado anual, apurados nos termos desta Resolução, serão subsídios para a Secretaria de Estado da Fazenda e para a Casa Civil na análise e deliberação dos pedidos de alterações orçamentárias apresentados pelos órgãos e entidades da administração pública estadual.</p>
+                        <p class="mb-4">Parágrafo único. As Unidades Orçamentárias que estiverem entre as duas últimas colocações de cada agrupamento, conforme classificação prevista nesta Resolução, deverão apresentar, previamente, medidas de melhoria na gestão orçamentária para que suas solicitações sejam analisadas.</p>
+                        <h2 class="text-2xl">CAPÍTULO II</h2>
+                        <h3 class="text-xl">DO RANKING DE COMPETETITIVIDADE</h3>
+                        <h3 class="text-xl">Seção I</h3>
+                        <h3 class="text-xl">Dos agrupamentos</h3>
+                        <p class="mb-4">Art. 5º As unidades serão avaliadas conforme agrupamentos, que observará o porte do orçamento alocado e vinculação Administrativa, sendo:</p>
+                        <ul class="list-disc list-inside mb-4">
+                            <li>I – Grupo I – Grande Porte: Unidades com orçamento anual superior a R$ [valor de referência];</li>
+                            <li>II – Grupo II – Médio Porte: Unidades com orçamento anual entre R$ [valor mínimo] e R$ [máximo];</li>
+                            <li>III – Grupo III – Pequeno Porte: Unidades com orçamento anual inferior a R$ [valor de referência];</li>
+                            <li>IV – Grupo IV - Administração Indireta Dependente de recursos do Tesouro Estadual.</li>
+                        </ul>
+                        <p class="mb-4">§1º A relação das Unidades Orçamentárias integrantes de cada grupo constará de Anexo desta Resolução, atualizado, em caso de necessidade, pela Diretoria de Orçamento Estadual.</p>
+                        <p class="mb-4">§2º Os parâmetros de avaliação poderão ser ajustados de acordo com as características de cada grupo, mediante ato próprio da Secretaria de Estado da Fazenda.</p>
+                        <h3 class="text-xl">Seção II</h3>
+                        <h3 class="text-xl">Dos Indicadores</h3>
+                        <p class="mb-4">Art. 6º Os indicadores estão organizados em quatro eixos de análise, agrupados e classificados em:</p>
+                        <ul class="list-disc list-inside mb-4">
+                            <li>I – Eixo de execução orçamentária:</li>
+                            <ul class="list-circle list-inside ml-4">
+                                <li>a) Empenho sobre Dotação Atualizada;</li>
+                                <li>b) Liquidação sobre Dotação Atualizada;</li>
+                                <li>c) Liquidação sobre Empenhos.</li>
+                            </ul>
+                            <li>II - Eixo de Créditos Adicionais</li>
+                            <ul class="list-circle list-inside ml-4">
+                                <li>a) Expansão Orçamentária;</li>
+                                <li>b) Execução do Superávit Concedido;</li>
+                                <li>c) Evitabilidade na Liberação de Créditos com Superávit;</li>
+                            </ul>
+                            <li>III - Eixo de Passivos de Exercícios anteriores</li>
+                            <ul class="list-circle list-inside ml-4">
+                                <li>a) Inscrição em Restos a Pagar;</li>
+                                <li>b) Cancelamento de Restos a Pagar;</li>
+                                <li>c) Pagamento dos Restos a Pagar;</li>
+                                <li>d) Impacto de Despesas de Exercícios Anteriores;</li>
+                            </ul>
+                            <li>IV – Eixo de Sustentabilidade Fiscal e Estratégica</li>
+                            <ul class="list-circle list-inside ml-4">
+                                <li>a) Pressão sobre Tesouro (Fontes Substituídas);</li>
+                                <li>b) Conformidade com o LME Finalístico;</li>
+                                <li>c) Remanejamento Interno Sem Acréscimo orçamentário;</li>
+                                <li>d) Execução Estratégica de Recursos Próprios e Vinculados;</li>
+                                <li>e) Independência Financeira;</li>
+                            </ul>
+                        </ul>
+                        <p class="mb-4">§2º As fórmulas de cálculo, critérios de apuração, metas e parâmetros de excelência serão definidos em normas complementares da Diretoria de Orçamento Estadual.</p>
+                        <p class="mb-4">§3º As notas dos indicadores serão graduadas níveis, pontuando de forma proporcional aos resultados.</p>
+                        <h3 class="text-xl">SEÇÃO III DA METODOLOGIA DE CÁLCULO DA PONTUAÇÃO</h3>
+                        <p class="mb-4">Art. 7º A apuração da pontuação dos órgãos e entidades no Ranking de Competitividade observará metodologia que considera o desempenho em indicadores agrupados por eixos temáticos, avaliados bimestralmente.</p>
+                        <p class="mb-4">Art. 8º Cada indicador terá pontuação variável de zero a cinco pontos, atribuída conforme o desempenho obtido pela Unidade Orçamentária no período de apuração.</p>
+                        <p class="mb-4">Art. 9º. Os eixos temáticos possuirão pontuação máxima de vinte e cinco pontos, calculada pela soma das notas dos respectivos indicadores das unidades orçamentárias.</p>
+                        <p class="mb-4">Art. 10. A nota bimestral, que comporá a pontuação final, será expressa na escala de 0 (zero) a 100 (cem) pontos, definida pela soma dos resultados dos Eixos Temáticos obtidos pelos órgãos.</p>
+                        <p class="mb-4">Art. 11. A pontuação final de cada órgão ou entidade será expressa na escala de 0 (zero) a 100 (cem) pontos, apurada pela média ponderada dos eixos ao longo dos seis bimestres do exercício, observados os seguintes pesos:</p>
+                        <ul class="list-disc list-inside mb-4">
+                            <li>I – primeiro e sexto bimestres: fator de ponderação 1,0;</li>
+                            <li>II – segundo e terceiro bimestres: fator de ponderação 1,5;</li>
+                            <li>III – quarto e quinto bimestres: fator de ponderação 2,5.</li>
+                        </ul>
+                        <p class="mb-4">Art. 12. A nota final atribuída no Ranking de Competitividade poderá ser objeto de recurso, por iniciativa da unidade interessada, mediante apresentação de justificativa fundamentada em critérios objetivos e devidamente ratificada pelo respectivo Ordenador de Despesa.</p>
+                        <p class="mb-4">§ 1º O recurso deverá ser protocolado em até 5 (cinco) dias uteis da divulgação do resultado preliminar, acompanhado dos documentos que comprovem a divergência apontada.</p>
+                        <p class="mb-4">§ 2º Caberá à Secretaria de Estado da Fazenda analisar o mérito do recurso, podendo deferi-lo total ou parcialmente, com a devida retificação da pontuação, caso comprovada a impropriedade na apuração inicial.</p>
+                        <h3 class="text-xl">Seção IV</h3>
+                        <h3 class="text-xl">DA DIVULGAÇÃO DOS RESULTADOS</h3>
+                        <p class="mb-4">Art. 13. A Secretaria de Estado da Fazenda, visando dar ampla transparência dos resultados, disponibilizará painel de acompanhamento no portal da Secretária, que será atualizado mensalmente.</p>
+                        <p class="mb-4">Parágrafo único: Para fins de acompanhamento, a nota dos órgãos será classificada nos seguintes níveis de desempenho:</p>
+                        <ul class="list-disc list-inside mb-4">
+                            <li>I – Superior: representa desempenho ou resultados de altíssima qualidade, superando significativamente as expectativas;</li>
+                            <li>II – Suficiente: indica um desempenho sólido, atendendo às expectativas com consistência e qualidade acima da média;</li>
+                            <li>III – Satisfatório com Riscos: demonstra atendimento essencial às exigências, embora apresente fragilidades ou inconsistências que demandam acompanhamento e ajustes;</li>
+                            <li>IV – Crítico: denota desempenho significativamente abaixo do esperado, exigindo atenção imediata para correções ou ações de melhoria.</li>
+                        </ul>
+                        <p class="mb-4">Art. 14. Para fins de apuração do resultado do Ranking de Competitividade de Gestão na Execução Orçamentária, será considerado CAMPEÃO/VENCEDOR/TOPZERA o órgão que obtiver a maior nota final ao final do exercício financeira, em cada agrupamento definido nos termos do art. 5º e do Anexo desta Resolução.</p>
+                        <p class="mb-4">§1º Serão automaticamente desclassificados do resultado anual os órgãos que possuírem Unidades Orçamentárias entre as duas pioras colocações do grupo.</p>
+                        <p class="mb-4">§2º Durante a execução do exercício, a medição e o acompanhamento dos resultados serão realizados individualmente por Unidade Orçamentária.</p>
+                        <p class="mb-4">Art. 15. Quadrimestralmente, a Diretoria de Orçamento Estadual apresentará ao Comitê de Governança Fiscal o Relatório Resumido de Acompanhando dos Indicadores.</p>
+                        <p class="mb-4">Art. 16. Anualmente, em conjunto com o resultado, a Diretoria de Orçamento Estadual publicará o Relatório Final do Ranking de Competitividade de Gestão na Execução Orçamentária.</p>
+                        <h3 class="text-xl">Seção IV</h3>
+                        <h3 class="text-xl">DA PREMIAÇÃO E RECONHECIMENTO</h3>
+                        <p class="mb-4">Art. 17. A Secretaria de Estado da Fazenda instituirá mecanismos de reconhecimento institucional para as Unidades Orçamentárias que atingirem ou superarem os parâmetros de excelência estabelecidos nos indicadores.</p>
+                        <p class="mb-4">§1º O reconhecimento se materializar por meio de:</p>
+                        <ul class="list-disc list-inside mb-4">
+                            <li>I – Certificados de desempenho;</li>
+                            <li>II – Divulgação pública dos resultados;</li>
+                            <li>III – Preferência em alocação de cotas orçamentárias adicionais, observado o equilíbrio fiscal.</li>
+                        </ul>
+                        <p class="mb-4">§2º A forma e os critérios de premiação serão disciplinados em ato próprio da Secretaria de Estado da Fazenda.</p>
+                        <p class="mb-4">§3º Será premiado o primeiro colocado de cada grupo descrito no art. 10 dessa resolução.</p>
+                        <p class="mb-4">Art. 18. A Secretaria de Estado da Fazenda, em conjunto com a Escola Fazendária, instituirá capacitação para os servidores, com presença obrigatória para os núcleos fazendários setoriais que estiverem com o desempenho classificado como ruim.</p>
+                        <h2 class="text-2xl">CAPÍTULO III</h2>
+                        <h3 class="text-xl">DAS COMPETÊNCIAS</h3>
+                        <p class="mb-4">Art. 19. Compete ao Núcleo Fazendário Setorial – NFS:</p>
+                        <ul class="list-disc list-inside mb-4">
+                            <li>I – Acompanhar a execução orçamentária de sua Unidade Orçamentária;</li>
+                            <li>II – Assessorar o Ordenador de Despesas no cumprimento dos indicadores;</li>
+                            <li>III – Propor medidas corretivas para o atingimento das metas.</li>
+                        </ul>
+                        <p class="mb-4">Art. 20. Compete ao Ordenador de Despesas:</p>
+                        <ul class="list-disc list-inside mb-4">
+                            <li>I – Assegurar a correta execução do orçamento, em conformidade com as normas vigentes;</li>
+                            <li>II – Atuar para o cumprimento dos indicadores estabelecidos;</li>
+                            <li>III – Responsabilizar-se pela gestão fiscal eficiente.</li>
+                        </ul>
+                        <p class="mb-4">Art. 21. Compete à Diretoria de Orçamento Estadual – DOE:</p>
+                        <ul class="list-disc list-inside mb-4">
+                            <li>I – Definir os parâmetros de mensuração dos indicadores;</li>
+                            <li>II – Monitorar, consolidar e divulgar os resultados;</li>
+                            <li>III – Propor ações corretivas e orientações;</li>
+                            <li>IV – Promover publicação anual de relatórios.</li>
+                        </ul>
+                        <h2 class="text-2xl">CAPÍTULO IV</h2>
+                        <h3 class="text-xl">DAS DISPOSIÇÕES FINAIS</h3>
+                        <p class="mb-4">Art. 22. A Diretoria de Orçamento Estadual editará normas complementares necessárias à execução desta Resolução, especialmente quanto à fórmula de cálculo, parâmetros e pesos dos indicadores.</p>
+                        <p class="mb-4">Art. 23. Esta Resolução entra em vigor na data de sua publicação.</p>
+                        <p class="mb-4">Curitiba, XX de xxx de 2025</p>
+                        <p class="mb-4">Norberto Anacleto Ortigara</p>
+                        <p class="mb-4">Secretário de Estado da Fazenda</p>
+                    </div>
+                </div>
+            </main>
+
+            <footer class="bg-gov-blue text-white mt-16">
+                <div class="container mx-auto px-6 py-8 text-center">
+                    <p class="font-bold text-lg">Um guia rápido para a Resolução do Ranking de Execução Orçamentária.</p>
+                    <p class="mt-2 text-sm opacity-80">Fonte: Resolução Nº XX/2025 - SEFA. Dados resumidos para fins ilustrativos.</p>
+                </div>
+            </footer>
+        </div>
+
     </div>
 
     <script>
-        // Dados Simulados para o Painel BI
-        const biData = {
-            units: [
-                { id: 'SEAP', name: 'SEAP', group: 'Grupo 1', finalScore: 94, indicators: [9, 8, 9, 7, 8, 9, 8, 7, 8, 9, 8, 7, 8, 9, 8] }, // Excelente geral
-                { id: 'IPEM', name: 'IPEM', group: 'Indiretas', finalScore: 88, indicators: [8, 7, 8, 6, 7, 8, 7, 6, 7, 8, 7, 6, 7, 8, 7] }, // Bom
-                { id: 'CEPR', name: 'CEPR', group: 'Indiretas', finalScore: 87, indicators: [7, 8, 7, 7, 6, 7, 8, 7, 6, 7, 8, 7, 6, 7, 8] }, // Bom
-                { id: 'AGE', name: 'AGE', group: 'Grupo 1', finalScore: 85, indicators: [8, 6, 8, 5, 7, 8, 6, 5, 7, 8, 6, 5, 7, 8, 6] }, // Satisfatório
-                { id: 'SEDEST', name: 'SEDEST', group: 'Grupo 2', finalScore: 85, indicators: [7, 7, 7, 6, 6, 7, 7, 6, 6, 7, 7, 6, 6, 7, 7] }, // Satisfatório
-                { id: 'PGE', name: 'PGE', group: 'Grupo 2', finalScore: 84, indicators: [6, 8, 6, 7, 5, 6, 8, 7, 5, 6, 8, 7, 5, 6, 8] }, // Satisfatório
-                { id: 'IPARDES', name: 'IPARDES', group: 'Indiretas', finalScore: 84, indicators: [7, 6, 7, 5, 8, 7, 6, 5, 8, 7, 6, 5, 8, 7, 6] }, // Satisfatório
-                { id: 'SEFA', name: 'SEFA', group: 'Grupo 1', finalScore: 81, indicators: [6, 7, 6, 8, 4, 6, 7, 8, 4, 6, 7, 8, 4, 6, 7] }, // Moderado
-                { id: 'CC', name: 'CC', group: 'Grupo 1', finalScore: 81, indicators: [5, 8, 5, 7, 5, 5, 8, 7, 5, 5, 8, 7, 5, 5, 8] }, // Moderado
-                { id: 'SEED', name: 'SEED', group: 'Grupo 1', finalScore: 80, indicators: [4, 9, 4, 6, 6, 4, 9, 6, 6, 4, 9, 6, 6, 4, 9] }, // Moderado
-                // Nova unidade SEES com variedade de status para demonstração
-                { id: 'SEES', name: 'SEES', group: 'Grupo 2', finalScore: 55, indicators: [9, 7, 5, 3, 8, 6, 4, 2, 9, 7, 5, 3, 8, 6, 4] },
-            ],
-            indicatorNames: [
-                '1.1 Empenho sobre Dotação Atualizada', '1.2 Liquidação sobre Dotação Atualizada', '1.3 Liquidação sobre Empenhos',
-                '2.1 Expansão Orçamentária', '2.2 Execução do Superávit Concedido', '2.3 Evitabilidade na Liberação de Créditos com Superávit',
-                '2.4 Indicador de alterações Internas Sem Acréscimos em LOA',
-                '3.1 Inscrição em Restos a Pagar', '3.2 Cancelamento de Restos a Pagar', '3.3 Pagamento dos Restos a Pagar', '3.4 Impacto de Despesas de Exercícios Anteriores',
-                '4.1 Pressão sobre Tesouro (Fontes Substituídas)', '4.2 Indicador de Foco em Ações Finalísticas', '4.3 Indicador de Execução Estratégica de Recursos Próprios e Vinculados', '4.4 Indicador de Independência Financeira'
-            ],
-            axisDefinitions: [ // Define os intervalos dos indicadores para cada eixo e sua pontuação bruta máxima (soma das pontuações dos indicadores de 0-10)
-                { name: 'Eixo 1: Execução', indicators: [0, 1, 2], maxRawScore: 25 }, // 1.1(7) + 1.2(9) + 1.3(9) = 25
-                { name: 'Eixo 2: Créditos Adicionais', indicators: [3, 4, 5, 6], maxRawScore: 25 }, // 2.1(6) + 2.2(6) + 2.3(7) + 2.4(6) = 25
-                { name: 'Eixo 3: Passivos de Exercícios Anteriores', indicators: [7, 8, 9, 10], maxRawScore: 25 }, // 3.1(7) + 3.2(6) + 3.3(6) + 3.4(6) = 25
-                { name: 'Eixo 4: Sustentabilidade Fiscal e Estratégica', indicators: [11, 12, 13, 14], maxRawScore: 25 } // 4.1(7) + 4.2(6) + 4.3(6) + 4.4(6) = 25
-            ],
-            // Novos pesos baseados na imagem fornecida
-            indicatorWeights: {
-                '1.1': 7, '1.2': 9, '1.3': 9,
-                '2.1': 6, '2.2': 6, '2.3': 7, '2.4': 6,
-                '3.1': 7, '3.2': 6, '3.3': 6, '3.4': 6,
-                '4.1': 7, '4.2': 6, '4.3': 6, '4.4': 6
-            }
+        // Data para o Painel de Resultados
+        const appData = {
+            overview: {
+                what_is_title: "O que é o Ranking?",
+                what_is_description: "O Ranking de Execução Orçamentária é uma ferramenta técnica desenvolvida pela Secretaria da Fazenda do Paraná para monitorar, avaliar e incentivar a eficiência na gestão do orçamento público. Ele promove a comparabilidade e a responsabilidade entre as diversas unidades orçamentárias do estado, fornecendo uma base de dados confiável para aprimorar a qualidade do gasto e fortalecer as políticas públicas.",
+                process: [
+                    { icon: '📊', title: '1. Coleta de Dados', description: 'Extração de dados financeiros brutos.' },
+                    { icon: '🧮', title: '2. Cálculo de Indicadores', description: 'Aplicação das 15 fórmulas de desempenho.' },
+                    { icon: '⚖️', title: '3. Ponderação', description: 'Atribuição de pesos estratégicos.' },
+                    { icon: '🏆', title: '4. Geração do Ranking', description: 'Classificação final das unidades.' }
+                ]
+            },
+            ranking: {
+                header_description: "Fortalecendo a transparência e a eficiência na aplicação dos recursos públicos através de uma análise de dados robusta e objetiva.",
+                cards: [
+                    { value: '15', label: 'Indicadores-Chave', color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-200' },
+                    { value: '4', label: 'Eixos de Análise', color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200' },
+                    { value: '100%', label: 'Foco em Melhoria Contínua', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200' }
+                ],
+                units: [
+                    { id: 'SEAP', name: 'SEAP', group: 'Grupo 1', finalScore: 94 },
+                    { id: 'IPEM', name: 'IPEM', group: 'Indiretas', finalScore: 88 },
+                    { id: 'CEPR', name: 'CEPR', group: 'Indiretas', finalScore: 87 },
+                    { id: 'AGE', name: 'AGE', group: 'Grupo 1', finalScore: 85 },
+                    { id: 'SEDEST', name: 'SEDEST', group: 'Grupo 2', finalScore: 85 },
+                    { id: 'PGE', name: 'PGE', group: 'Grupo 2', finalScore: 84 },
+                    { id: 'IPARDES', name: 'IPARDES', group: 'Indiretas', finalScore: 84 },
+                    { id: 'SEFA', name: 'SEFA', group: 'Grupo 1', finalScore: 81 },
+                    { id: 'CC', name: 'CC', group: 'Grupo 1', finalScore: 81 },
+                    { id: 'SEED', name: 'SEED', group: 'Grupo 1', finalScore: 80 },
+                ]
+            },
+            metodologia: {
+                eixo1: { title: "Eixo 1: Execução", description: "Avalia a eficiência na utilização dos recursos, desde o planejamento até a liquidação das despesas.", baseColor: "#003366", data: [ { name: '1.1 Indicador de Empenho sobre Dotação Atualizada', value: 9 }, { name: '1.2 Indicador de Liquidação sobre Dotação Atualizada', value: 7 }, { name: '1.3 Indicador de Liquidação sobre Empenhos', value: 9 } ] },
+                eixo2: { title: "Eixo 2: Créditos Adicionais", description: "Analisa a precisão do planejamento orçamentário e a gestão de ajustes e superávits.", baseColor: "#009933", data: [ { name: '2.1 Indicador de Expansão Orçamentária', value: 6 }, { name: '2.2 Indicador de Execução do Superávit Concedido', value: 6 }, { name: '2.3 Indicador de Evitabilidade na Liberação de Créditos com Superávit', value: 7 }, { name: '2.4 Indicador de alterações Internas Sem Acréscimos em LOA', value: 6 } ] },
+                eixo3: { title: "Eixo 3: Passivos de Exercícios anteriores", description: "Foca na gestão de compromissos de exercícios financeiros anteriores.", baseColor: "#7c3aed", data: [ { name: '3.1 Indicador de Inscrição em Restos a Pagar', value: 7 }, { name: '3.2 Indicador de Cancelamento de Restos a Pagar', value: 6 }, { name: '3.3 Indicador de Pagamento dos Restos a Pagar', value: 6 }, { name: '3.4 Indicador de Impacto de Despesas de Exercícios Anteriores', value: 6 } ] },
+                eixo4: { title: "Eixo 4: Sustentabilidade Fiscal e Estratégica", description: "Mede a autonomia financeira da unidade e o uso estratégico de recursos.", baseColor: "#d97706", data: [ { name: '4.1 Indicador de Pressão sobre Tesouro (Fontes Substituídas)', value: 7 }, { name: '4.2 Indicador de Foco em Ações Finalísticas', value: 6 }, { name: '4.4 Indicador de Execução Estratégica de Recursos Próprios e Vinculados', value: 6 }, { name: '4.5 Indicador de Independência Financeira', value: 6 } ] }
+            },
+            indicatorLabels: ['Empenho/Dotação', 'Liq./Dotação', 'Liq./Empenhos', 'Expansão Orç.', 'Exec. Superávit', 'Evitabilidade Créd.', 'Inscrição RP', 'Cancel. RP', 'Pag. RP', 'Impacto DEA', 'Pressão Tesouro', 'Conf. LME', 'Remanejamento', 'Exec. Rec. Próprios']
         };
 
         let currentFilter = 'todos';
-        let biAxisScoreChartInstance = null; // Gráfico para as pontuações dos eixos
+        let radarChart = null;
 
-
-        // Opções comuns do Chart.js para tooltips e rótulos
-        const commonChartOptions = {
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        title: function(tooltipItems) {
-                            const item = tooltipItems[0];
-                            let label = item.chart.data.labels[item.dataIndex];
-                            // Se o rótulo for um array (multilinha), junte-o para o título do tooltip
-                            if (Array.isArray(label)) {
-                                return label.join(' ');
-                            }
-                            return label;
-                        }
-                    }
-                }
+        function generateShades(hex, count) {
+            const shades = [];
+            let r = parseInt(hex.slice(1, 3), 16);
+            let g = parseInt(hex.slice(3, 5), 16);
+            let b = parseInt(hex.slice(5, 7), 16);
+            for (let i = 0; i < count; i++) {
+                const factor = i * (1 / (count * 1.5));
+                const newR = Math.floor(Math.max(0, r * (1 - factor)));
+                const newG = Math.floor(Math.max(0, g * (1 - factor)));
+                const newB = Math.floor(Math.max(0, b * (1 - factor)));
+                shades.push(`#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`);
             }
-        };
-
-        // Função para quebrar rótulos longos para Chart.js
-        const wrapLabel = (label, maxWidth) => {
-            const words = label.split(' ');
-            let lines = [];
-            let currentLine = words[0];
-            for (let i = 1; i < words.length; i++) {
-                if (currentLine.length + words[i].length + 1 < maxWidth) {
-                    currentLine += ' ' + words[i];
-                } else {
-                    lines.push(currentLine);
-                    currentLine = words[i];
-                }
-            }
-            lines.push(currentLine);
-            return lines;
-        };
-
-        // Função para determinar o status do indicador com base na pontuação (escala de 0-10)
-        function getIndicatorStatus(score) {
-            if (score >= 8) { // 8-10 pts = Excelente
-                return { text: 'Excelente', color: 'text-excellent', dotColor: 'dot-excellent', barColor: '#0066CC' }; /* Azul mais claro (primary-light) */
-            } else if (score >= 6) { // 6-7 pts = Satisfatório
-                return { text: 'Satisfatório', color: 'text-satisfactory', dotColor: 'dot-satisfactory', barColor: '#004B91' }; /* Azul médio (primary-medium) */
-            } else if (score >= 4) { // 4-5 pts = Moderado
-                return { text: 'Moderado', color: 'text-moderate', dotColor: 'dot-moderate', barColor: '#002B5B' }; /* Azul escuro (primary-dark) */
-            } else { // 0-3 pts = Insatisfatório
-                return { text: 'Insatisfatório', color: 'text-insatisfactory', dotColor: 'dot-insatisfactory', barColor: '#DC3545' }; /* Vermelho vibrante */
-            }
+            return shades;
         }
 
-        // Função para determinar o status do eixo com base na pontuação escalonada (escala de 0-25)
-        function getAxisStatus(score) {
-            if (score >= 20) { // 20-25 pts = Excelente
-                return { text: 'Excelente', color: 'text-excellent', dotColor: 'dot-excellent', barColor: '#0066CC' }; /* Azul mais claro (primary-light) */
-            } else if (score >= 15) { // 15-19 pts = Satisfatório
-                return { text: 'Satisfatório', color: 'text-satisfactory', dotColor: 'dot-satisfactory', barColor: '#004B91' }; /* Azul médio (primary-medium) */
-            } else if (score >= 10) { // 10-14 pts = Moderado
-                return { text: 'Moderado', color: 'text-moderate', dotColor: 'dot-moderate', barColor: '#002B5B' }; /* Azul escuro (primary-dark) */
-            } else { // 0-9 pts = Insatisfatório
-                return { text: 'Insatisfatório', color: 'text-insatisfactory', dotColor: 'dot-insatisfactory', barColor: '#DC3545' }; /* Vermelho vibrante */
-            }
+        // --- Funções de Renderização do Painel de Resultados ---
+        function renderOverview(container) {
+            const overviewData = appData.overview;
+            container.innerHTML = `
+                <section class="animate-fade-in">
+                    <div class="text-center">
+                        <h2 class="text-3xl font-bold text-gov-blue">${overviewData.what_is_title}</h2>
+                        <p class="mt-4 max-w-4xl mx-auto text-gray-600 text-lg">${overviewData.what_is_description}</p>
+                        <div class="mt-8 text-center">
+                            <button onclick="showMainPage('resolucao-page')" class="inline-flex items-center gap-2 bg-white text-gov-blue font-semibold py-3 px-6 rounded-lg border-2 border-gray-300 hover:bg-gray-100 hover:border-gov-blue transition-all duration-300 shadow-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                                Consultar Resolução na Íntegra
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch max-w-6xl mx-auto">
+                        ${overviewData.process.map((item, index) => `
+                            <div class="flex items-center">
+                                <div class="text-center p-6 bg-white rounded-lg border border-gray-200 w-full h-full flex flex-col justify-center shadow-sm hover:shadow-xl transition-shadow duration-300">
+                                    <div class="text-5xl mb-4">${item.icon}</div>
+                                    <h3 class="font-bold text-gov-blue text-lg">${item.title}</h3>
+                                    <p class="text-sm text-gray-500 mt-1">${item.description}</p>
+                                </div>
+                                ${index < 3 ? `<div class="hidden lg:block text-4xl text-gray-300 mx-4 font-light">›</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </section>
+            `;
         }
 
-        // Renderiza a Tabela de Ranking do BI
-        function renderBiRankingTable() {
-            const tableBody = document.getElementById('bi-ranking-table-body');
+        function renderRanking(container) {
+            const rankingData = appData.ranking;
+            container.innerHTML = `
+                <section class="animate-fade-in">
+                    <div class="text-center">
+                            <h2 class="text-3xl font-bold text-gov-blue">Dashboard de Competitividade</h2>
+                            <p class="mt-4 max-w-3xl mx-auto text-gray-600">${rankingData.header_description}</p>
+                    </div>
+                    <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                        ${rankingData.cards.map(card => `
+                            <div class="${card.bg} border ${card.border} text-center p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                                <p class="text-5xl font-bold ${card.color}">${card.value}</p>
+                                <p class="text-gray-700 font-medium mt-2">${card.label}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="mt-12 bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                        <div class="flex flex-col lg:flex-row gap-8">
+                            <div class="w-full lg:w-2/5">
+                                <h3 class="text-xl font-bold mb-4 text-gov-blue">Classificação Geral</h3>
+                                <div class="flex flex-wrap gap-2 mb-4" id="filter-buttons">
+                                    <button data-group="todos" class="filter-btn bg-gov-blue text-white py-2 px-4 rounded-md text-sm font-semibold">Todos</button>
+                                    <button data-group="Grupo 1" class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-md text-sm font-semibold">Grupo 1</button>
+                                    <button data-group="Grupo 2" class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-md text-sm font-semibold">Grupo 2</button>
+                                    <button data-group="Indiretas" class="filter-btn bg-gray-200 text-gray-700 py-2 px-4 rounded-md text-sm font-semibold">Indiretas</button>
+                                </div>
+                                <div class="overflow-y-auto h-96 pr-2">
+                                    <table class="w-full text-left text-sm">
+                                        <thead class="sticky top-0 bg-gray-100 z-10"><tr><th class="p-3 font-semibold">#</th><th class="p-3 font-semibold">Unidade</th><th class="p-3 text-right font-semibold">Nota</th></tr></thead>
+                                        <tbody id="ranking-table-body"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="w-full lg:w-3/5">
+                                <div id="detail-view" class="bg-gray-100 p-6 rounded-lg h-full">
+                                    <div id="placeholder" class="flex flex-col items-center justify-center h-full text-center text-gray-500">
+                                        <svg class="w-16 h-16 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0 0 20.25 18V5.25A2.25 2.25 0 0 0 18 3H6A2.25 2.25 0 0 0 3.75 5.25v12.75A2.25 2.25 0 0 0 6 20.25Z" /></svg>
+                                        <h4 class="text-lg font-bold text-gray-700">Detalhes da Unidade</h4>
+                                        <p>Selecione uma unidade na tabela para ver seu desempenho.</p>
+                                    </div>
+                                    <div id="unit-details" class="hidden">
+                                        <h4 id="unit-name" class="text-2xl font-bold mb-1 text-gov-blue"></h4>
+                                        <p id="unit-group" class="text-sm text-gray-500 mb-4"></p>
+                                        <div class="radar-chart-container mx-auto"><canvas id="indicatorChart"></canvas></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            `;
+            renderRankingTable();
+            setupRankingInteractions();
+        }
+
+        function renderMetodologia(container) {
+            container.innerHTML = `
+                <section class="animate-fade-in">
+                    <div class="text-center mb-12">
+                            <h2 class="text-3xl font-bold text-gov-blue">Detalhamento da Metodologia</h2>
+                            <p class="mt-4 max-w-3xl mx-auto text-gray-600">Cada eixo contribui com até 25 pontos para a nota final. Veja abaixo a composição de cada um.</p>
+                    </div>
+                    <div class="space-y-16">
+                        ${Object.keys(appData.metodologia).map(key => renderEixo(appData.metodologia[key])).join('')}
+                    </div>
+                </section>
+            `;
+            setTimeout(() => {
+                Object.keys(appData.metodologia).forEach((key, index) => {
+                    renderDonutChart(`donut-chart-${key}`, appData.metodologia[key]);
+                });
+            }, 0);
+        }
+        
+        function renderEixo(eixoData) {
+            const totalPoints = eixoData.data.reduce((sum, item) => sum + item.value, 0);
+            const colors = generateShades(eixoData.baseColor, eixoData.data.length);
+            const eixoId = eixoData.title.split(':')[0].replace(' ', '').toLowerCase();
+
+            return `
+                <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-200">
+                    <div class="text-center mb-10">
+                        <h3 class="text-2xl font-bold mb-2 pb-3 inline-block" style="color: ${eixoData.baseColor}; border-bottom: 4px solid ${eixoData.baseColor};">${eixoData.title}</h3>
+                        <p class="text-base text-gray-700 max-w-3xl mx-auto mt-3">${eixoData.description}</p>
+                    </div>
+                    <div class="flex flex-col lg:flex-row lg:space-x-8 items-center">
+                        <div class="w-full lg:w-1/3 flex flex-col items-center mb-8 lg:mb-0">
+                            <div id="donut-chart-${eixoId}" class="dashboard-chart-container"></div>
+                            <div class="flex flex-col items-start space-y-2 mt-4 text-sm w-full max-w-xs">
+                                ${eixoData.data.map((slice, index) => `
+                                    <div class="flex items-center w-full">
+                                        <div class="w-3 h-3 rounded-full mr-3" style="background-color: ${colors[index]}"></div>
+                                        <span class="text-gray-700">${slice.name.substring(slice.name.indexOf(' ') + 1)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="w-full lg:w-2/3">
+                            <h4 class="text-lg font-bold mb-4" style="color: ${eixoData.baseColor}">Total de Pontos: ${totalPoints},0</h4>
+                            <ul class="space-y-4">
+                                ${eixoData.data.map(item => `
+                                    <li class="bg-gray-50 p-4 rounded-lg shadow-sm flex justify-between items-center" style="border-left: 4px solid ${eixoData.baseColor}">
+                                        <span class="font-medium text-gray-800 text-sm md:text-base">${item.name}</span>
+                                        <span class="font-bold text-base" style="color: ${eixoData.baseColor}">${item.value},0 Pts</span>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderDonutChart(containerId, eixoData) {
+            const chartContainer = document.getElementById(containerId);
+            if (!chartContainer) return;
+
+            const labels = eixoData.data.map(item => item.name);
+            const values = eixoData.data.map(item => item.value);
+            const colors = generateShades(eixoData.baseColor, values.length);
+
+            chartContainer.innerHTML = '<canvas></canvas>';
+            const ctx = chartContainer.querySelector('canvas').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{ data: values, backgroundColor: colors, borderColor: '#ffffff', borderWidth: 3, hoverOffset: 4 }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '70%',
+                    plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${c.label}: ${c.raw} pts` } } }
+                }
+            });
+        }
+        
+        function renderRankingTable() {
+            const tableBody = document.getElementById('ranking-table-body');
             if (!tableBody) return;
             tableBody.innerHTML = '';
-            const filteredData = biData.units
+            const filteredData = appData.ranking.units
                 .filter(item => currentFilter === 'todos' || item.group === currentFilter)
                 .sort((a, b) => b.finalScore - a.finalScore);
             filteredData.forEach((item, index) => {
                 const row = document.createElement('tr');
                 row.className = 'hover:bg-blue-50 cursor-pointer border-b border-gray-200';
                 row.dataset.id = item.id;
-                row.innerHTML = `<td class="p-3 font-medium text-gray-600">${index + 1}</td><td class="p-3 text-gray-800 font-semibold">${item.name}</td><td class="p-3 text-right font-bold text-primary-dark">${item.finalScore}</td>`;
+                row.innerHTML = `<td class="p-3 font-medium text-gray-600">${index + 1}</td><td class="p-3 text-gray-800 font-semibold">${item.name}</td><td class="p-3 text-right font-bold text-gov-blue">${item.finalScore}</td>`;
                 tableBody.appendChild(row);
             });
         }
 
-        // Atualiza os cartões KPI com os dados da melhor unidade geral e selecionada
-        function updateKpiCards(selectedUnit = null) {
-            // Encontra a melhor unidade no grupo ATUALMENTE FILTRADO
-            const unitsInCurrentFilter = biData.units.filter(unit => currentFilter === 'todos' || unit.group === currentFilter);
-            const bestUnitInGroup = unitsInCurrentFilter.length > 0 
-                                            ? [...unitsInCurrentFilter].sort((a, b) => b.finalScore - a.finalScore)[0]
-                                            : { name: 'N/A', finalScore: 'N/A' };
-            
-            const bestUnitNameElement = document.getElementById('best-unit-name');
-            const bestUnitLabelElement = document.getElementById('best-unit-label');
-            const selectedUnitNameElement = document.getElementById('selected-unit-name');
-            const selectedUnitLabelElement = document.getElementById('selected-unit-label');
-            const kpiSelectedUnitDiv = document.getElementById('kpi-selected-unit');
-
-            if (bestUnitNameElement) bestUnitNameElement.textContent = bestUnitInGroup.name;
-            if (bestUnitLabelElement) bestUnitLabelElement.textContent = `Melhor Desempenho no Grupo (${bestUnitInGroup.finalScore})`;
-
-            if (selectedUnit) {
-                if (selectedUnitNameElement) selectedUnitNameElement.textContent = selectedUnit.name;
-                if (selectedUnitLabelElement) selectedUnitLabelElement.textContent = `Unidade Selecionada (${selectedUnit.finalScore})`;
-                if (kpiSelectedUnitDiv) kpiSelectedUnitDiv.classList.add('kpi-selected-highlight'); /* Adiciona classe de destaque */
-            } else {
-                if (selectedUnitNameElement) selectedUnitNameElement.textContent = 'N/A';
-                if (selectedUnitLabelElement) selectedUnitLabelElement.textContent = 'Unidade Selecionada';
-                if (kpiSelectedUnitDiv) kpiSelectedUnitDiv.classList.remove('kpi-selected-highlight'); /* Remove classe de destaque */
-            }
-        }
-
-        // Renderiza gráficos de colunas empilhadas para cada eixo
-        function renderAxisCompositionCharts(unitData) {
-            const axisChartsContainer = document.getElementById('bi-axis-charts-container');
-            if (!axisChartsContainer) return;
-
-            axisChartsContainer.innerHTML = ''; // Limpa gráficos anteriores
-            axisChartsContainer.classList.remove('hidden');
-            const biAxisPlaceholder = document.getElementById('bi-axis-placeholder');
-            if (biAxisPlaceholder) biAxisPlaceholder.classList.add('hidden');
-
-            biData.axisDefinitions.forEach((axisDef, axisIndex) => {
-                const canvasId = `axisChart-${axisIndex}`;
-                const chartDiv = document.createElement('div');
-                // Aplica flexbox diretamente ao chartDiv para alinhamento consistente de título e canvas
-                chartDiv.className = 'bg-gray-50 p-4 rounded-lg shadow-sm chart-container flex flex-col'; 
-                chartDiv.innerHTML = `<h4 class="text-lg font-bold text-primary-dark mb-3 text-center">${axisDef.name}</h4><canvas id="${canvasId}" class="flex-grow"></canvas>`;
-                axisChartsContainer.appendChild(chartDiv);
-
-                const ctx = document.getElementById(canvasId).getContext('2d');
-                
-                // Prepara os datasets para o gráfico de barras empilhadas para este eixo
-                const datasets = axisDef.indicators.map(indicatorIndex => {
-                    const indicatorScore = unitData.indicators[indicatorIndex];
-                    const indicatorStatus = getIndicatorStatus(indicatorScore);
-                    const indicatorFullName = biData.indicatorNames[indicatorIndex];
-                    const indicatorShortName = indicatorFullName.split(' ')[0]; // Ex: "1.1"
-
-                    return {
-                        label: indicatorShortName, // Nome curto para a legenda
-                        data: [indicatorScore], // Valor único para este indicador
-                        backgroundColor: indicatorStatus.barColor,
-                        borderColor: indicatorStatus.barColor,
-                        borderWidth: 1,
-                        stack: `axis${axisIndex}Stack`, // Todos os indicadores neste eixo se empilham
-                        borderRadius: 5,
-                    };
-                });
-
-                new Chart(ctx, {
-                    type: 'bar', // Gráfico de barras vertical
-                    data: {
-                        labels: ['Pontuação'], // Um único rótulo para a coluna
-                        datasets: datasets
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: {
-                            duration: 1000,
-                            easing: 'easeInOutQuart'
-                        },
-                        scales: {
-                            x: {
-                                stacked: true, // Empilha as barras no eixo X
-                                display: false, // Oculta os rótulos do eixo X (Pontuação)
-                                grid: { display: false }
-                            },
-                            y: {
-                                stacked: true, // Empilha as barras no eixo Y
-                                beginAtZero: true,
-                                max: axisDef.maxRawScore, // Pontuação bruta máxima para este eixo
-                                title: {
-                                    display: true,
-                                    text: 'Pontuação Total do Eixo',
-                                    font: { family: 'Lato', size: 12 },
-                                    color: '#374151'
-                                },
-                                ticks: {
-                                    color: '#4b5563',
-                                    font: { family: 'Lato' }
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: true, // Mostra a legenda para os segmentos empilhados
-                                position: 'bottom',
-                                labels: {
-                                    font: { family: 'Lato', size: 10 },
-                                    color: '#374151',
-                                    usePointStyle: true, // Usa pontos coloridos na legenda
-                                    boxWidth: 8,
-                                    padding: 10,
-                                    filter: (legendItem, chartData) => {
-                                        // Mostra apenas os itens da legenda que possuem um valor não zero para este eixo
-                                        const dataset = chartData.datasets[legendItem.datasetIndex];
-                                        return dataset.data[0] > 0;
-                                    }
-                                }
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        let label = context.dataset.label || '';
-                                        if (label) {
-                                            label += ': ';
-                                        }
-                                        if (context.parsed.y !== null) {
-                                            label += context.parsed.x + ' pts'; // Para barra horizontal, x é o valor
-                                        }
-                                        // Obtém o nome completo do indicador a partir do array original indicatorNames
-                                        const indicatorIndex = biData.indicatorNames.findIndex(name => name.startsWith(context.dataset.label));
-                                        const fullIndicatorName = biData.indicatorNames[indicatorIndex];
-                                        const indicatorScore = context.parsed.x;
-                                        const status = getIndicatorStatus(indicatorScore);
-                                        return `${fullIndicatorName}: ${indicatorScore} pts (${status.text})`;
-                                    }
-                                }
-                            },
-                            datalabels: {
-                                display: true,
-                                color: '#fff', // Cor branca para os rótulos nas barras
-                                font: {
-                                    family: 'Lato',
-                                    weight: 'bold',
-                                    size: 10
-                                },
-                                formatter: (value) => value > 0 ? value + ' pts' : '', // Mostra o rótulo apenas se o valor > 0
-                                align: 'center',
-                                anchor: 'center'
-                            }
-                        }
-                    }
-                });
-            });
-        }
-
-
-        // Mostra Detalhes da Unidade (Gráfico de Barras de Indicadores Individuais e Lista)
-        function showBiUnitDetails(unitId) {
-            const unitData = biData.units.find(u => u.id === unitId);
-            if (!unitData) return;
-
-            // Oculta placeholders e mostra seções de conteúdo
-            const biAxisPlaceholder = document.getElementById('bi-axis-placeholder');
-            if (biAxisPlaceholder) biAxisPlaceholder.classList.add('hidden');
-            const biAxisChartsContainer = document.getElementById('bi-axis-charts-container');
-            if (biAxisChartsContainer) biAxisChartsContainer.classList.remove('hidden');
-            const biIndicatorPlaceholder = document.getElementById('bi-indicator-placeholder');
-            if (biIndicatorPlaceholder) biIndicatorPlaceholder.classList.add('hidden');
-            const biIndicatorScoresList = document.getElementById('bi-indicator-scores-list');
-            if (biIndicatorScoresList) biIndicatorScoresList.classList.remove('hidden');
-
-            // Atualiza cartões KPI com a unidade selecionada
-            updateKpiCards(unitData);
-            
-            // Renderiza os gráficos de composição do eixo
-            renderAxisCompositionCharts(unitData);
-
-            // Renderiza a lista de pontuações detalhadas dos indicadores com status
-            if (biIndicatorScoresList) { // Verifica se o elemento existe antes de manipular
-                biIndicatorScoresList.innerHTML = ''; // Limpa a lista anterior
-                // Cria um array de objetos para armazenar o nome e a pontuação do indicador, então o classifica pelo ID numérico
-                const indicatorsWithDetails = biData.indicatorNames.map((name, index) => ({
-                    fullName: name,
-                    shortName: name.split(' ')[0], // Ex: "1.1"
-                    score: unitData.indicators[index],
-                    status: getIndicatorStatus(unitData.indicators[index])
-                }));
-
-                // Classifica os indicadores pelo seu ID numérico (shortName)
-                indicatorsWithDetails.sort((a, b) => {
-                    const aParts = a.shortName.split('.').map(Number);
-                    const bParts = b.shortName.split('.').map(Number);
-
-                    if (aParts[0] !== bParts[0]) {
-                        return aParts[0] - bParts[0];
-                    }
-                    return aParts[1] - bParts[1];
-                });
-
-                indicatorsWithDetails.forEach(item => { 
-                    const li = document.createElement('li');
-                    li.className = 'flex justify-between items-center bg-gray-50 p-2 rounded-md';
-                    li.innerHTML = `
-                        <span>
-                            <span class="inline-block w-3 h-3 rounded-full mr-2 ${item.status.dotColor}"></span>
-                            ${item.fullName}:
-                        </span> 
-                        <span class="font-bold ${item.status.color}">${item.score} pts (${item.status.text})</span>
-                    `;
-                    biIndicatorScoresList.appendChild(li);
-                });
-            }
-        }
-
-        // Configura os botões de filtro para a Tabela de Ranking do BI
-        function setupBiRankingInteractions() {
+        function setupRankingInteractions() {
             document.getElementById('filter-buttons')?.addEventListener('click', (e) => {
                 if (e.target.tagName === 'BUTTON') {
                     currentFilter = e.target.dataset.group;
                     document.querySelectorAll('#filter-buttons button').forEach(btn => {
-                        btn.classList.remove('bg-primary-dark', 'text-white');
+                        btn.classList.remove('bg-gov-blue', 'text-white');
                         btn.classList.add('bg-gray-200', 'text-gray-700');
                     });
-                    e.target.classList.add('bg-primary-dark', 'text-white');
+                    e.target.classList.add('bg-gov-blue', 'text-white');
                     e.target.classList.remove('bg-gray-200', 'text-gray-700');
-                    renderBiRankingTable();
-                    updateKpiCards(); // Atualiza a melhor unidade no grupo quando o filtro muda
-                    // Oculta os detalhes da unidade quando o filtro muda até que uma nova unidade seja selecionada
-                    const biAxisPlaceholder = document.getElementById('bi-axis-placeholder');
-                    if (biAxisPlaceholder) biAxisPlaceholder.classList.remove('hidden');
-                    const biAxisChartsContainer = document.getElementById('bi-axis-charts-container');
-                    if (biAxisChartsContainer) biAxisChartsContainer.classList.add('hidden');
-                    const biIndicatorPlaceholder = document.getElementById('bi-indicator-placeholder');
-                    if (biIndicatorPlaceholder) biIndicatorPlaceholder.classList.remove('hidden'); // Mostra o placeholder para detalhes do indicador individual
-                    const biIndicatorScoresList = document.getElementById('bi-indicator-scores-list');
-                    if (biIndicatorScoresList) biIndicatorScoresList.classList.add('hidden'); // Oculta o conteúdo do indicador individual
-                    document.querySelectorAll('#bi-ranking-table-body tr').forEach(r => r.classList.remove('bg-blue-100', 'font-bold'));
+                    renderRankingTable();
                 }
             });
 
-            document.getElementById('bi-ranking-table-body')?.addEventListener('click', (e) => {
+            document.getElementById('ranking-table-body')?.addEventListener('click', (e) => {
                 const row = e.target.closest('tr');
                 if (row) {
                     const unitId = row.dataset.id;
-                    showBiUnitDetails(unitId);
-                    // Remove o destaque da linha anterior e adiciona à linha atual
-                    document.querySelectorAll('#bi-ranking-table-body tr').forEach(r => r.classList.remove('bg-blue-100', 'font-bold'));
-                    row.classList.add('bg-blue-100', 'font-bold');
+                    showUnitDetails(unitId);
+                    document.querySelectorAll('#ranking-table-body tr').forEach(r => r.classList.remove('bg-blue-100'));
+                    row.classList.add('bg-blue-100');
+                }
+            });
+        }
+        
+        function showUnitDetails(unitId) {
+            const unitData = appData.ranking.units.find(u => u.id === unitId);
+            if (!unitData) return;
+            document.getElementById('placeholder').classList.add('hidden');
+            document.getElementById('unit-details').classList.remove('hidden');
+            document.getElementById('unit-name').textContent = unitData.name;
+            document.getElementById('unit-group').textContent = unitData.group;
+            const ctx = document.getElementById('indicatorChart').getContext('2d');
+            if (radarChart) radarChart.destroy();
+            const mockScores = Array(14).fill(0).map(() => (Math.random() * 8 + 2).toFixed(1));
+            radarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: appData.indicatorLabels,
+                    datasets: [{
+                        label: 'Pontuação por Indicador',
+                        data: mockScores,
+                        backgroundColor: 'rgba(0, 51, 102, 0.2)',
+                        borderColor: 'rgba(0, 51, 102, 1)',
+                        borderWidth: 2,
+                        pointBackgroundColor: 'rgba(0, 51, 102, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(0, 51, 102, 1)'
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: { r: { suggestedMin: 0, suggestedMax: 10, pointLabels: { font: { size: 9 } }, grid: { color: 'rgba(0,0,0,0.1)' }, angleLines: { color: 'rgba(0,0,0,0.1)' } } },
+                    plugins: { legend: { display: false } }
                 }
             });
         }
 
-        // Renderização inicial na carga da página
+        // --- Funções de Navegação entre Páginas Principais ---
+        function showMainPage(pageId) {
+            document.querySelectorAll('.page-content').forEach(page => page.classList.add('hidden'));
+            document.getElementById(pageId).classList.remove('hidden');
+
+            // Re-render content for specific pages when shown
+            if (pageId === 'dashboard-page') {
+                const dashboardContentContainer = document.getElementById('dashboard-content-container');
+                // Ensure the initial tab of the dashboard is rendered when dashboard page is shown
+                const initialDashboardTab = document.querySelector('#dashboard-tabs-container .dashboard-tab-button[data-tab-id="overview"]');
+                if (initialDashboardTab) {
+                    initialDashboardTab.classList.add('active');
+                    renderOverview(dashboardContentContainer);
+                }
+                // Also re-render ranking details if a unit was selected previously
+                if (radarChart) {
+                    // This is a hack to re-render the chart if the page was hidden and shown again
+                    // In a real app, you might have a more robust state management
+                    const currentUnitId = document.getElementById('unit-name')?.dataset?.unitId;
+                    if (currentUnitId) showUnitDetails(currentUnitId);
+                }
+            } else if (pageId === 'resolucao-page') {
+                // Ensure the initial tab of the resolution infographic is rendered
+                const initialResTab = document.querySelector('#resolucao-page #res-tabInfografico');
+                if (initialResTab) {
+                    initialResTab.classList.add('active');
+                    document.getElementById('res-contentInfografico').style.display = 'block'; // Show infographic content
+                    document.getElementById('res-contentResolucao').style.display = 'none'; // Hide full resolution content
+                }
+            }
+        }
+
+        // --- Funções de Inicialização ---
         document.addEventListener('DOMContentLoaded', () => {
-            renderBiRankingTable();
-            setupBiRankingInteractions();
-            updateKpiCards(); // Inicializa os cartões KPI na carga
+            // Show the intro page initially
+            showMainPage('intro-page');
+
+            // Setup dashboard tabs
+            document.querySelectorAll('#dashboard-tabs-container .dashboard-tab-button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const tabId = event.currentTarget.getAttribute('data-tab-id');
+                    document.querySelectorAll('#dashboard-tabs-container .dashboard-tab-button').forEach(btn => btn.classList.remove('active'));
+                    event.currentTarget.classList.add('active');
+                    const contentContainer = document.getElementById('dashboard-content-container');
+                    if (tabId === 'overview') renderOverview(contentContainer);
+                    else if (tabId === 'ranking') renderRanking(contentContainer);
+                    else if (tabId === 'metodologia') renderMetodologia(contentContainer);
+                });
+            });
+
+            // Setup resolution infographic tabs
+            const resTabInfografico = document.getElementById('res-tabInfografico');
+            const resTabResolucao = document.getElementById('res-tabResolucao');
+            const resContentInfografico = document.getElementById('res-contentInfografico');
+            const resContentResolucao = document.getElementById('res-contentResolucao');
+            const consultarResolucaoBtn = document.getElementById('consultarResolucaoBtn');
+
+            function showResTab(tabId) {
+                // Explicitly hide both content divs first
+                resContentInfografico.style.display = 'none';
+                resContentResolucao.style.display = 'none';
+
+                // Remove active class from all buttons
+                resTabInfografico.classList.remove('active');
+                resTabResolucao.classList.remove('active');
+                
+                // Add active class to clicked button and show corresponding content
+                if (tabId === 'infografico') {
+                    resTabInfografico.classList.add('active');
+                    resContentInfografico.style.display = 'block'; // Explicitly show
+                } else if (tabId === 'resolucao') {
+                    resTabResolucao.classList.add('active');
+                    resContentResolucao.style.display = 'block'; // Explicitly show
+                }
+            }
+
+            if (resTabInfografico) resTabInfografico.addEventListener('click', () => showResTab('infografico'));
+            if (resTabResolucao) resTabResolucao.addEventListener('click', () => showResTab('resolucao'));
+            // The button "Consultar Resolução na Íntegra" is inside res-contentInfografico,
+            // so its click handler needs to activate the 'resolucao' tab.
+            if (consultarResolucaoBtn) consultarResolucaoBtn.addEventListener('click', () => showResTab('resolucao'));
         });
     </script>
 </body>
